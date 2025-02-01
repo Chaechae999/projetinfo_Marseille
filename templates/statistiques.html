@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistiques de la Bibliothèque</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 500px; margin: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Statistiques de la Bibliothèque</h1>
+    <p id="stats"></p>
+  </div>
+
+  <script>
+    async function fetchStats() {
+      const response = await fetch('/statistiques');
+      const stats = await response.json();
+      document.getElementById('stats').innerHTML = `
+        <strong>Total d'emprunts:</strong> ${stats.total_emprunts} <br>
+        <strong>Total de réservations:</strong> ${stats.total_reservations} <br>
+        <strong>Taux de rotation des livres:</strong> ${stats.taux_rotation.toFixed(2)}
+      `;
+    }
+    fetchStats();
+  </script>
+</body>
+</html>

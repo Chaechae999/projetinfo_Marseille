@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails du Livre</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="livre-title">Détails du Livre</h1>
+        <p><strong>Auteur:</strong> <span id="livre-auteur"></span></p>
+        <p><strong>Catégorie:</strong> <span id="livre-categorie"></span></p>
+        <p><strong>Disponibilité:</strong> <span id="livre-disponibilite"></span></p>
+        <p><strong>En Emprunt:</strong> <span id="livre-en-emprunt"></span></p>
+        <p><strong>Réservations:</strong> <span id="livre-reservations"></span></p>
+        <p><strong>Dernier emprunteur:</strong> <span id="livre-dernier-utilisateur"></span></p>
+        <p><strong>Dernière date d'emprunt:</strong> <span id="livre-derniere-emprunt"></span></p>
+        <p><strong>Date de retour:</strong> <span id="livre-date-retour"></span></p>
+        <p><strong>Dernière date de réservation:</strong> <span id="livre-derniere-reservation"></span></p>
+        <button id="reserve-button">Réserver ce livre</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const livreId = urlParams.get('id');
+
+        async function fetchLivreDetails() {
+            if (!livreId) {
+                document.body.innerHTML = "<h1 style='text-align:center;'>Livre non trouvé</h1>";
+                return;
+            }
+
+            const response = await fetch(`/api/livre/${livreId}`);
+            const livre = await response.json();
+
+            if (livre.error) {
+                document.body.innerHTML = "<h1 style='text-align:center;'>Livre non trouvé</h1>";
+            } else {
+                document.getElementById("livre-title").innerText = livre.titre;
+                document.getElementById("livre-auteur").innerText = livre.auteur;
+                document.getElementById("livre-categorie").innerText = livre.categorie || "N/A";
+                document.getElementById("livre-disponibilite").innerText = livre.disponibilite ? "Disponible" : "Non disponible";
+
+                document.getElementById("livre-en-emprunt").innerText = livre.en_emprunt ? "Oui" : "Non";
+
+                document.getElementById("livre-reservations").innerText = livre.reservations > 0 ? livre.reservations + " réservations" : "Aucune";
+                document.getElementById("livre-dernier-utilisateur").innerText = livre.dernier_emprunteur || "Aucun";
+                document.getElementById("livre-derniere-emprunt").innerText = livre.derniere_date_emprunt || "Aucune";
+                document.getElementById("livre-date-retour").innerText = livre.date_retour || "Aucune";
+                document.getElementById("livre-derniere-reservation").innerText = livre.derniere_date_reservation || "Aucune";
+
+                
+                if (!livre.disponibilite) {
+                    document.getElementById("reserve-button").innerText = "Ce livre est disponible à emprunter";
+                    document.getElementById("reserve-button").disabled = true;
+                }
+            }
+        }
+
+
+        fetchLivreDetails();
+
+        // 예약 버튼 클릭 이벤트 (현재는 alert만, 향후 API 연결 가능)
+        document.getElementById("reserve-button").addEventListener("click", () => {
+            alert("Réservation effectuée !");
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Usagers</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 400px; margin: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ajouter un Usager</h1>
+    <form id="usagerForm">
+      <input type="text" id="nom" placeholder="Nom" required><br>
+      <input type="text" id="prenom" placeholder="Prénom" required><br>
+      <input type="email" id="email" placeholder="Email" required><br>
+      <button type="submit">Ajouter</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('usagerForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const nom = document.getElementById('nom').value;
+      const prenom = document.getElementById('prenom').value;
+      const email = document.getElementById('email').value;
+
+      const response = await fetch('/usagers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom, prenom, email })
+      });
+
+      const result = await response.json();
+      alert(result.message || result.error);
+      document.getElementById('usagerForm').reset();
+    });
+  </script>
+</body>
+</html>

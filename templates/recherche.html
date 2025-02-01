@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recherche de Livres</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Recherche de Livres</h1>
+
+    <!-- 사용자 추가 및 통계 버튼 -->
+    <button onclick="showUserForm()">➕ Ajouter un Usager</button>
+    <button onclick="showStatistics()">📊 Voir les Statistiques</button>
+
+    <!-- 사용자 추가 폼 -->
+    <div id="userForm" style="display:none; margin-top:20px;">
+      <h2>Ajouter un Usager</h2>
+      <input type="text" id="nom" placeholder="Nom" required><br>
+      <input type="text" id="prenom" placeholder="Prénom" required><br>
+      <input type="email" id="email" placeholder="Email" required><br>
+      <input type="text" id="adresse" placeholder="Adresse"><br>  
+      <input type="text" id="telephone" placeholder="Téléphone"><br> 
+      <button onclick="ajouterUsager()">Ajouter</button>
+    </div>
+
+    <!-- 도서 검색 폼 -->
+    <form id="searchForm">
+      <input type="text" id="searchInput" placeholder="Entrez un mot-clé pour rechercher" required>
+      <button type="submit">Rechercher</button>
+    </form>
+
+    <!-- 검색 결과 표시 -->
+    <div id="results"></div>
+
+    <!-- 통계 결과 표시 -->
+    <div id="statistics" style="display:none; margin-top:20px;">
+      <h2>Statistiques</h2>
+      <p id="stats"></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('searchForm');
+    const resultsDiv = document.getElementById('results');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const query = document.getElementById('searchInput').value;
+
+      const response = await fetch('/recherche', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      const livres = await response.json();
+
+      if (livres.length > 0) {
+        let html = `
+          <table>
+            <tr>
+              <th>Titre</th>
+              <th>Auteur</th>
+              <th>Catégorie</th>
+              <th>Disponibilité</th>
+              <th>Détail</th>
+              <th>Action</th>
+            </tr>
+        `;
+        livres.forEach(livre => {
+          html += `
+            <tr>
+              <td>${livre.titre}</td>
+              <td>${livre.auteur}</td>
+              <td>${livre.categorie || 'N/A'}</td>
+              <td>${livre.disponibilite ? 'Disponible' : 'Non disponible'}</td>
+              <td><a href="/detail?id=${livre.id_livre}">Voir</a></td>
+              <td>
+                ${livre.disponibilite 
+                  ? `<button onclick="emprunter(${livre.id_livre})">Emprunter</button>` 
+                  : `<button onclick="retourner(${livre.id_livre})">Retourner</button>`}
+              </td>
+            </tr>
+          `;
+        });
+        html += '</table>';
+        resultsDiv.innerHTML = html;
+      } else {
+        resultsDiv.innerHTML = '<p>Aucun résultat trouvé.</p>';
+      }
+    });
+
+    async function emprunter(idLivre) {
+      const idUsager = prompt("Entrez votre ID utilisateur:");
+      if (!idUsager) return;
+
+      const response = await fetch('/emprunter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_usager: idUsager, id_livre: idLivre })
+      });
+
+      const result = await response.json();
+      alert(result.message || result.error);
+      location.reload(); 
+    }
+
+    async function retourner(idLivre) {
+      let idUsager = prompt("Entrez votre ID utilisateur:"); 
+
+      if (!idUsager || isNaN(idUsager)) {
+          alert("ID utilisateur invalide.");
+          return;
+      }
+
+      idUsager = parseInt(idUsager); 
+
+      console.log("DEBUG: Envoi de la requête avec ID usager:", idUsager, "et ID livre:", idLivre);
+
+      try {
+          const response = await fetch('/retourner', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id_usager: idUsager, id_livre: idLivre })
+          });
+
+          console.log("DEBUG: Réponse du serveur:", response);
+
+          if (!response.ok) {
+              throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log("DEBUG: Résultat JSON reçu:", result);
+          alert(result.message || result.error);
+          location.reload();
+
+      } catch (error) {
+          console.error("Erreur lors du retour:", error);
+          alert("Erreur lors du retour: " + error.message);
+      }
+  }
+
+
+  async function showStatistics() {
+    try {
+          const response = await fetch('/statistiques');
+          if (!response.ok) {
+              throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+
+          const stats = await response.json();
+          document.getElementById('stats').innerHTML = `
+              <strong>Total d'emprunts:</strong> ${stats.total_emprunts} <br>
+              <strong>Total de réservations:</strong> ${stats.total_reservations} <br>
+              <strong>Taux de rotation des livres:</strong> ${stats.taux_rotation.toFixed(2)}
+          `;
+
+          document.getElementById('statistics').style.display = 'block';
+      } catch (error) {
+          console.error("Erreur lors du chargement des statistiques:", error);
+          alert("Impossible de charger les statistiques.");
+      }
+  }
+
+  function showUserForm() {
+    const userForm = document.getElementById('userForm');
+    if (userForm.style.display === 'none' || userForm.style.display === '') {
+        userForm.style.display = 'block';
+    } else {
+        userForm.style.display = 'none';
+    }
+  }
+  
+
+
+  async function ajouterUsager() {
+    const nom = document.getElementById('nom').value;
+    const prenom = document.getElementById('prenom').value;
+    const email = document.getElementById('email').value;
+    const adresse = document.getElementById('adresse').value; // 🔥 주소 추가
+    const telephone = document.getElementById('telephone').value; // 🔥 전화번호 추가
+
+    if (!nom || !prenom || !email) {
+        alert("Veuillez remplir tous les champs obligatoires.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/usagers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nom, prenom, email, adresse, telephone })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
+        const result = await response.json();
+        alert(result.message || result.error);
+
+        document.getElementById('nom').value = "";
+        document.getElementById('prenom').value = "";
+        document.getElementById('email').value = "";
+        document.getElementById('adresse').value = "";
+        document.getElementById('telephone').value = "";
+        document.getElementById('userForm').style.display = 'none';
+
+    } catch (error) {
+        console.error("Erreur lors de l'ajout de l'utilisateur:", error);
+        alert("Erreur lors de l'ajout de l'utilisateur: " + error.message);
+    }
+  }
+
+
+  </script>
+
+</body>
+</html>
